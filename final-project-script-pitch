@@ -1,0 +1,129 @@
+#1 of 2 of the split scripts. 
+
+####################################################################################################
+
+#THE PROCEDURE WHICH I BORROWED FROM MIETTA. SHOUTS OUT AND CREDIT TO MIETTA LENNES
+
+procedure TierNumber name$ variable$
+	#Gets the number of tiers
+	numberOfTiers = Get number of tiers
+	# Makes a variable that will count how many tiers
+	itier = 1
+	#Creates a repeating loop of commands that will end in certain conditions
+	repeat
+		#Gets the tier name for a tier each time it loops, starting with 1
+		tier$ = Get tier name... itier
+		#Increases the number of the tier it will check with each loop
+		itier = itier + 1
+	#End conditions for the loop -- when it finds the tier you named, or passes through all
+	until tier$ = name$ or itier > numberOfTiers
+	#Gives the variable a 0 value if it doesn't find your tier
+	if tier$ <> name$
+		'variable$' = 0
+	#Gives the variable the number value of the tier it is on 
+	else 
+		'variable$' = itier - 1
+	endif
+endproc
+
+#######################################################################################################
+
+#First I want to have a form that will ask for all the necessary information
+form Find the duration of consonant components and formant data of vowels
+	comment Directory of the Sound files
+	text sound_directory C:\Users\jake\Desktop\phd\F19\Nasal\Nasal Intonation\
+	sentence Sound_extension .wav
+	comment Directory of the TextGrid files
+	text textGrid_directory C:\Users\jake\Desktop\phd\F19\Nasal\Nasal Intonation\
+	sentence TextGrid_extension .TextGrid
+	comment Path of output file?
+	text resultfile C:\Users\jake\Desktop\phd\F19\Nasal\Nasal Intonation\final-project-measurements.txt
+	comment Which tier contains the words?
+	sentence word_tier word
+	comment Which tier contains the token number?
+	sentence number_tier number
+	comment Which tier contains the sentence type?
+	sentence type_tier type
+	comment Pitch analysis parameters
+	positive Time_step 0.001
+	positive Minimum_pitch_(Hz) 125
+	positive Maximum_pitch_(Hz) 400
+endform
+
+#THE STRINGS LIST
+Create Strings as file list... list 'sound_directory$'*'sound_extension$'
+numberOfFiles = Get number of strings
+
+#TAKING NAMES
+titleline$ = "Filename	Words	Number	Type	onsetf0	10%f0	20%f0	30%f0	40%f0	50%f0	60%f0	70%f0	80%f0	90%f0	finalf0	rangef0"
+fileappend "'resultfile$'" 'titleline$'
+
+#LET'S GET STARTED WITH THE BIG OL' LOOP
+num = 0
+for ifile to numberOfFiles
+	num = num + 1
+	filename$ = Get string... ifile
+	#Open one sound at a time
+	Read from file... 'sound_directory$''filename$'
+	#Check to see if there are any TextGrid files, and if so, start the if loop
+	gridfile$ = "'textGrid_directory$''soundname$''textGrid_extension$'"
+	if fileReadable (gridfile$)
+		Read from file... 'gridfile$'
+		#Find the tier number of tiers using the process and labels from the form
+		call TierNumber 'word_tier$' word_tier
+		call TierNumber 'type_tier$' type_tier
+		call TierNumber 'number_tier$' number_tier
+		#Now make sure there is a value for all the tiers...
+		if number_tier > 0 and type_tier > 0 and word_tier > 0
+			#Count all the intervals in the word tier so we can make a loop
+			numberOfIntervals = Get number of intervals... number_tier
+			#Select TextGrid and cycle through all the intervals
+			select TextGrid 'soundname$'
+			for interval to numberOfIntervals
+				#Define a variable for the label of every interval in the component tier
+				label$ = Get label of interval... number_tier interval
+				#Applies to only non-empty intervals
+				no = 0
+				if label$ <> ""
+					no = no + 1
+					#Get the start and end point to calculate duration
+					start = Get starting point... number_tier interval
+					end = Get end point... number_tier interval
+					#Calculate duration of the interval
+					duration = end - start
+					#Calculate f0 range by subtracting f0 min from f0 max for interval
+					f0max = Get maximum pitch
+					f0min = Get minimum pitch
+					f0range = f0max - f0min
+					#Get labels for target and word tier to list in final .txt file
+					word = Get interval at time... word_tier start
+					target_label$ = Get label of interval... word_tier word
+					type = Get interval at time... type_tier start
+					type_label$ = Get label of interval... type_tier type
+					# next divide segment into tenths
+					stepsize=(end-start)/10
+					# get midpoint of next 1/10th interval
+					midpoint=start+stepsize/2
+					select Pitch pitchFile
+					# GET the PITCH mean at the syllable in question;
+					for step to 11
+						pitch=Get value at time... midpoint Hertz Linear
+						resultline$ = "'num'	'soundname$'	'word_label$'	'label$'	'no'	'midpoint:3'	'pitch:3'	'newline$'"
+						fileappend "'resultfile$'" 'resultline$'
+						midpoint=midpoint+stepsize
+					enfor'
+				endif
+			endfor
+		endif
+		#Remove the TextGrid
+		select TextGrid 'soundname$'
+		Remove
+	endif
+	#Remove Sound objects
+	select Sound 'soundname$'
+	Remove
+	#select the Strings list and it will repeat with more files
+	select Strings list
+endfor
+
+#ALSO BIG SHOUTS OUT TO AMBER CAMP FOR LETTING ME LOOK AT HER PITCH SCRIPT. THANK YOU AMBER
