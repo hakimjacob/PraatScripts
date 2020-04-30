@@ -1,0 +1,206 @@
+#First I want to have a form that will ask for all the necessary information
+form Find the duration of consonant components and formant data of vowels
+	comment Directory of the Sound files
+	text sound_directory /Users/jake/Desktop/phd/F19/R-final-Hakim/
+	sentence Sound_extension .wav
+	sentence TextGrid_extension .TextGrid
+endform
+
+# IT'S THAT GOOD OL' STRINGS LIST AGAIN
+Create Strings as file list... list 'sound_directory$'*'sound_extension$'
+numberOfFiles = Get number of strings
+
+# THE BIG LABELLER LOOP
+for ifile to numberOfFiles
+	filename$ = Get string... ifile
+	#Open one sound at a time
+	Read from file... 'sound_directory$''filename$'
+	soundname$ = selected$ ("Sound", 1)
+	#Make TextGrid files
+	To TextGrid (silences): 50, 0, -25, 0.5, 0.1, "xxx", ""
+
+	##################PART 2###########################
+	##########tiers and annotations####################
+	soundname$ = selected$ ("TextGrid", 1)
+	select TextGrid 'soundname$'
+	Save as text file: 'sound_directory$'/'filename$.TextGrid'
+
+	#Add tiers
+	Duplicate tier: 1, 1, "number"
+	Duplicate tier: 1, 2, "type"
+	Remove tier: 3
+	beginPause: "Oof."
+		comment: "Ok, make sure each recording has the right number of annotations."
+		comment: "1A: 10"
+		comment: "2A: 9"
+		comment: "3A: 8"
+		comment: "1B: 9"
+		comment: "2B: 6"
+		comment: "3B: 8"
+	endPause: "OK", 1
+
+	####LABEL FROM TEXT FILE################
+
+	soundname$ = selected$ ("TextGrid", 1)
+	select TextGrid 'soundname$'
+	stringlength = 0
+	filelength = 0
+	firstnewline = 0
+	oldlabel$ = ""
+	newlabel$ = ""
+
+	#Form number tier
+	form Label intervals in an IntervalTier from text file
+	comment Give the path of the text file containing the number label lines:
+	sentence Filename C:/Users/jake/Desktop/phd/F19/R final Hakim/1A-number-labels.txt/
+	comment Which IntervalTier in the selected TextGrid do you want to label?
+	integer Tier_(index) 1 (= the first IntervalTier)
+	comment Which interval do we start labeling from?
+	integer Starting_interval_(index) 1 (= the first interval)
+	comment Do you want to overwrite old labels?
+	comment (Intervals previously marked with 'xxx' will be skipped despite this!)
+	boolean Overwrite 1
+	endform
+
+	#Labelling number tier
+	if fileReadable (filename$)
+	numberOfIntervals = Get number of intervals... tier
+	if starting_interval > numberOfIntervals
+	exit There are not that many intervals in the IntervalTier!
+	endif
+	leftoverlength = 0
+	# Read the text file and put it to the string file$
+	file$ < 'filename$'
+	if file$ = ""
+		exit The text file is empty.
+	endif
+	filelength = length (file$)
+	leftover$ = file$
+	# Loop through intervals from the selected interval on:
+	for interval from starting_interval to numberOfIntervals
+	oldlabel$ = Get label of interval... tier interval
+	if oldlabel$ <> "xxx"
+	# Here we read a line from the text file and put it to newlabel$:
+	firstnewline = index (leftover$, newline$)
+	newlabel$ = left$ (leftover$, (firstnewline - 1))
+	leftoverlength = length (leftover$)
+	leftover$ = right$ (leftover$, (leftoverlength - firstnewline))
+	# Then we check if the interval label is empty. If it is or if we decided to overwrite, 
+	# we add the new label we collected from the text file:
+  	  if overwrite = 1
+		      		Set interval text... tier interval 'newlabel$'
+				elsif oldlabel$ = ""
+		    	  Set interval text... tier interval 'newlabel$'
+				else 
+						exit Stopped labeling, will not overwrite old labels!
+   	endif
+	endif
+	endfor
+	else 
+		exit The label text file 'filename$' does not exist where it should!
+	endif
+
+	#Form type tier
+	form Label intervals in an IntervalTier from text file
+	comment Give the path of the text file containing the type label lines:
+	sentence Filename C:/Users/jake/Desktop/phd/F19/R final Hakim/1A-number-labels.txt/
+	comment Which IntervalTier in the selected TextGrid do you want to label?
+	integer Tier_(index) 2 (= the second IntervalTier)
+	comment Which interval do we start labeling from?
+	integer Starting_interval_(index) 1 (= the first interval)
+	comment Do you want to overwrite old labels?
+	comment (Intervals previously marked with 'xxx' will be skipped despite this!)
+	boolean Overwrite 1
+	endform
+
+	#Labelling type tier
+	if fileReadable (filename$)
+	numberOfIntervals = Get number of intervals... tier
+	if starting_interval > numberOfIntervals
+	exit There are not that many intervals in the IntervalTier!
+	endif
+	leftoverlength = 0
+	# Read the text file and put it to the string file$
+	file$ < 'filename$'
+	if file$ = ""
+		exit The text file is empty.
+	endif
+	filelength = length (file$)
+	leftover$ = file$
+	# Loop through intervals from the selected interval on:
+	for interval from starting_interval to numberOfIntervals
+	oldlabel$ = Get label of interval... tier interval
+	if oldlabel$ <> "xxx"
+	# Here we read a line from the text file and put it to newlabel$:
+	firstnewline = index (leftover$, newline$)
+	newlabel$ = left$ (leftover$, (firstnewline - 1))
+	leftoverlength = length (leftover$)
+	leftover$ = right$ (leftover$, (leftoverlength - firstnewline))
+	# Then we check if the interval label is empty. If it is or if we decided to overwrite, 
+	# we add the new label we collected from the text file:
+  	  if overwrite = 1
+		      		Set interval text... tier interval 'newlabel$'
+				elsif oldlabel$ = ""
+		    	  Set interval text... tier interval 'newlabel$'
+				else 
+						exit Stopped labeling, will not overwrite old labels!
+   	endif
+	endif
+	endfor
+	else 
+		exit The label text file 'filename$' does not exist where it should!
+	endif
+
+	#Form word tier
+	form Label intervals in an IntervalTier from text file
+	comment Give the path of the text file containing the word label lines:
+	sentence Filename C:/Users/jake/Desktop/phd/F19/R final Hakim/1A-number-labels.txt/
+	comment Which IntervalTier in the selected TextGrid do you want to label?
+	integer Tier_(index) 2 (= the second IntervalTier)
+	comment Which interval do we start labeling from?
+	integer Starting_interval_(index) 1 (= the first interval)
+	comment Do you want to overwrite old labels?
+	comment (Intervals previously marked with 'xxx' will be skipped despite this!)
+	boolean Overwrite 1
+	endform
+
+	#Labelling word tier
+	if fileReadable (filename$)
+	numberOfIntervals = Get number of intervals... tier
+	if starting_interval > numberOfIntervals
+	exit There are not that many intervals in the IntervalTier!
+	endif
+	leftoverlength = 0
+	# Read the text file and put it to the string file$
+	file$ < 'filename$'
+	if file$ = ""
+		exit The text file is empty.
+	endif
+	filelength = length (file$)
+	leftover$ = file$
+	# Loop through intervals from the selected interval on:
+	for interval from starting_interval to numberOfIntervals
+	oldlabel$ = Get label of interval... tier interval
+	if oldlabel$ <> "xxx"
+	# Here we read a line from the text file and put it to newlabel$:
+	firstnewline = index (leftover$, newline$)
+	newlabel$ = left$ (leftover$, (firstnewline - 1))
+	leftoverlength = length (leftover$)
+	leftover$ = right$ (leftover$, (leftoverlength - firstnewline))
+	# Then we check if the interval label is empty. If it is or if we decided to overwrite, 
+	# we add the new label we collected from the text file:
+  	  if overwrite = 1
+		      		Set interval text... tier interval 'newlabel$'
+				elsif oldlabel$ = ""
+		    	  Set interval text... tier interval 'newlabel$'
+				else 
+						exit Stopped labeling, will not overwrite old labels!
+   	endif
+	endif
+	endfor
+	else 
+		exit The label text file 'filename$' does not exist where it should!
+	endif
+	select TextGrid 'soundname$'
+	Remove
+endfor
